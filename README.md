@@ -46,3 +46,10 @@ conda activate alarmclock
 python alarm_clock.py
 ```
 > No requirements needed
+
+---
+> ## Font Credits
+
+> Digital-7 font by Sizenko Alexander (Style-7), used under the Digital-7 freeware license for non-commercial use.  
+http://www.styleseven.com
+
