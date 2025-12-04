@@ -29,7 +29,7 @@ Features multiple color themes, 12 or 24 hour mode, snooze, and a flashing visua
 
 ---
 
-## Screenshots
+## Screenshot Preview
 
 <img width="400" height="304" alt="image" src="https://github.com/user-attachments/assets/b633c1c4-b58c-40ab-9d40-85181881a480" />
 
