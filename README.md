@@ -33,7 +33,7 @@ Features multiple color themes, 12 or 24 hour mode, snooze, and a flashing visua
 
 ## Screenshot Preview
 
-<img width="400" height="304" alt="image" src="https://github.com/user-attachments/assets/b633c1c4-b58c-40ab-9d40-85181881a480" />
+<img width="404" height="403" alt="image" src="https://github.com/user-attachments/assets/d7cb6146-6a36-438a-bb72-8cb3be12d67a" />
 
 ---
 
