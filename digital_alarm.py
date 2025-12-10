@@ -3,12 +3,13 @@ from tkinter import ttk
 from tkinter import font as tkfont
 import ctypes
 import datetime as dt
+import requests
 import winsound
 import os
 
 root = tk.Tk()
 root.title("Digital Clock")
-root.geometry("400x275")
+root.geometry("400x400")
 root.configure(bg="black")
 root.resizable(True, True)
 
@@ -18,9 +19,21 @@ use_24h = False
 current_theme = "Default"
 current_theme_bg = "black"
 current_theme_fg = "#00ff2b"
-flash_on = False 
+flash_on = False
 
 sound_path = os.path.join("assets", "alarm_sound.wav")
+
+try:
+    from config import WEATHER_API_KEY
+except ImportError:
+    WEATHER_API_KEY = None
+    
+WEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5/weather"
+
+weather_city_var = tk.StringVar(value="")
+weather_temp_var = tk.StringVar(value="")
+weather_desc_var = tk.StringVar(value="")
+weather_status_var = tk.StringVar(value="")
 
 ctypes.windll.gdi32.AddFontResourceW(os.path.abspath("assets/Digital-7.ttf"))
 digital_font = tkfont.Font(family="Digital-7", size=64)
@@ -63,6 +76,55 @@ style.map(
     foreground=[("readonly", "#00ff2b")],
 )
 
+def fetch_weather(city_name: str):
+    if not WEATHER_API_KEY:
+        weather_status_var.set("No API key set (see config.py)")
+        return
+
+    if not city_name:
+        weather_status_var.set("Enter a city name")
+        return
+
+    try:
+        params = {
+            "q": city_name,
+            "appid": WEATHER_API_KEY,
+            "units": "metric",  # Celsius
+        }
+        response = requests.get(WEATHER_BASE_URL, params=params, timeout=5)
+        data = response.json()
+        print(response.status_code, data)
+
+        # Basic error handling
+        if response.status_code != 200 or data.get("cod") != 200:
+            msg = data.get("message", "Error fetching weather").capitalize()
+            weather_status_var.set(msg)
+            weather_city_var.set("")
+            weather_temp_var.set("")
+            weather_desc_var.set("")
+            return
+
+        # Extract fields
+        name = data["name"]
+        country = data["sys"]["country"]
+        temp = data["main"]["temp"]
+        feels_like = data["main"]["feels_like"]
+        desc = data["weather"][0]["description"].capitalize()
+
+        weather_city_var.set(f"{name}, {country}")
+        weather_temp_var.set(f"{temp:.1f}°C (feels like {feels_like:.1f}°C)")
+        weather_desc_var.set(desc)
+        weather_status_var.set("")
+
+    except Exception as e:
+        weather_status_var.set("Network error")
+        weather_city_var.set("")
+        weather_temp_var.set("")
+        weather_desc_var.set("")
+        # print(e)  # optional debug
+
+
+
 def apply_theme(theme_name: str):
     global current_theme, current_theme_bg, current_theme_fg
     current_theme = theme_name
@@ -87,6 +149,28 @@ def apply_theme(theme_name: str):
     alarm_frame.config(bg=bg)
     buttons_frame.config(bg=bg)
     top_controls.config(bg=bg)
+
+    if "weather_frame" in globals():
+        weather_frame.config(bg=bg)
+        for widget in [
+            weather_title,
+            weather_city_label,
+            weather_city_entry,
+            weather_city_value,
+            weather_temp_value,
+            weather_desc_value,
+            weather_status_label,
+        ]:
+            widget.config(bg=bg, fg=fg)
+
+        weather_city_entry.config(insertbackground=fg)
+        get_weather_button.config(
+            bg=bg,
+            fg=fg,
+            activebackground=highlight,
+            activeforeground=fg,
+        )
+
 
     for widget in [hour_label, minute_label]:
         widget.config(bg=bg, fg=fg)
@@ -214,7 +298,7 @@ def flash_alarm():
         fieldbackground=new_bg,
         background=new_bg,
     )
-    
+
     style.map(
         "Alarm.TCombobox",
         fieldbackground=[("readonly", new_bg)],
@@ -286,7 +370,7 @@ def update_time():
 
     now = dt.datetime.now()
     date_label.config(text=now.strftime("%A, %B %d, %Y"))
-    
+
     if use_24h:
         clock_part = now.strftime("%H:%M:%S")
         ampm_part = ""
@@ -390,7 +474,7 @@ use_24h_button= tk.Button(
     command=toggle_24h,
     **button_style
 )
-use_24h_button.pack(side="left", padx=5)    
+use_24h_button.pack(side="left", padx=5)
 
 alarm_frame = tk.Frame(root, bg="black")
 alarm_frame.pack(pady=(0, 10))
@@ -441,6 +525,86 @@ dismiss_button.config(state="disabled")
 snooze_button = tk.Button(buttons_frame, text="Snooze", command=snooze_alarm, **button_style)
 snooze_button.pack(side="left", padx=10)
 snooze_button.config(state="disabled")
+
+# --- Weather UI ---
+weather_frame = tk.Frame(root, bg=current_theme_bg)
+weather_frame.pack(pady=(10, 5), fill="x")
+
+weather_title = tk.Label(
+    weather_frame,
+    text="Weather",
+    font=("Arial", 12, "bold"),
+    fg=current_theme_fg,
+    bg=current_theme_bg,
+)
+weather_title.grid(row=0, column=0, columnspan=3, sticky="w", padx=5, pady=(0, 5))
+
+weather_city_label = tk.Label(
+    weather_frame,
+    text="City:",
+    font=("Arial", 10),
+    fg=current_theme_fg,
+    bg=current_theme_bg,
+)
+weather_city_label.grid(row=1, column=0, sticky="w", padx=5)
+
+weather_city_entry = tk.Entry(
+    weather_frame,
+    width=18,
+    bg=current_theme_bg,
+    fg=current_theme_fg,
+    insertbackground=current_theme_fg,
+)
+weather_city_entry.grid(row=1, column=1, sticky="w", padx=5)
+
+def on_get_weather():
+    city = weather_city_entry.get().strip()
+    fetch_weather(city)
+
+get_weather_button = tk.Button(
+    weather_frame,
+    text="Get Weather",
+    command=on_get_weather,
+    **button_style,
+)
+get_weather_button.grid(row=1, column=2, padx=5)
+
+weather_city_value = tk.Label(
+    weather_frame,
+    textvariable=weather_city_var,
+    font=("Arial", 10, "bold"),
+    fg=current_theme_fg,
+    bg=current_theme_bg,
+)
+weather_city_value.grid(row=2, column=0, columnspan=3, sticky="w", padx=5, pady=(5, 0))
+
+weather_temp_value = tk.Label(
+    weather_frame,
+    textvariable=weather_temp_var,
+    font=("Arial", 10),
+    fg=current_theme_fg,
+    bg=current_theme_bg,
+)
+weather_temp_value.grid(row=3, column=0, columnspan=3, sticky="w", padx=5)
+
+weather_desc_value = tk.Label(
+    weather_frame,
+    textvariable=weather_desc_var,
+    font=("Arial", 10),
+    fg=current_theme_fg,
+    bg=current_theme_bg,
+)
+weather_desc_value.grid(row=4, column=0, columnspan=3, sticky="w", padx=5)
+
+weather_status_label = tk.Label(
+    weather_frame,
+    textvariable=weather_status_var,
+    font=("Arial", 9),
+    fg="red",
+    bg=current_theme_bg,
+)
+weather_status_label.grid(row=5, column=0, columnspan=3, sticky="w", padx=5, pady=(3, 0))
+
 
 hour_entry.bind("<FocusIn>", on_focus_in)
 hour_entry.bind("<FocusOut>", on_focus_out)
