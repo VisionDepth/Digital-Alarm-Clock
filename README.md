@@ -26,7 +26,9 @@ Features multiple color themes, 12 or 24 hour mode, snooze, and a flashing visua
   - Terminal Green  
   - Deep Ocean  
   - Amber Glow  
-
+- Optional weather widget:
+  - Enter a city name and get current temperature and conditions
+  - Uses the free OpenWeather API if configured
 ---
 
 ## Screenshot Preview
@@ -35,7 +37,7 @@ Features multiple color themes, 12 or 24 hour mode, snooze, and a flashing visua
 
 ---
 
-Installation (conda for simplicity) 
+## Installation (conda for simplicity) 
 1. Download or clone repo into designated folder 
 2. Run this command in prompt
 
@@ -43,9 +45,44 @@ Installation (conda for simplicity)
 cd path\to\alarmclock #Adjust to the repo path
 conda create -n alarmclock python=3.14
 conda activate alarmclock
+pip install requests
 python alarm_clock.py
 ```
-> No requirements needed
+## Weather API setup (optional but recommended)
+The clock can show live weather using the OpenWeather API.
+If you do not set up an API key, the clock still works, but the weather panel will show a message like “No API key set (see config.py)”. 
+
+### 1. Sign up for a free API key
+1. Go to https://openweathermap.org/
+2. Create a free account and log in.
+3. Go to the API keys section of your account.
+4. Copy your API key.
+   - New keys can take 2 to 3 hours to fully activate on their servers.
+     
+### 2. Create your config.py
+In the repo you will see a file named config_example.py:
+```
+"""
+config_example.py
+
+1. Rename this file to: config.py
+2. Sign up for a weather API key at https://openweathermap.org/ (Free tier is fine)
+3. Paste your API key into WEATHER_API_KEY below (inside the quotes)
+
+Note: Weather API keys can take a couple of hours to activate.
+"""
+
+WEATHER_API_KEY = "PUT_YOUR_OPENWEATHER_KEY_HERE"
+```
+Once you rename the file and add your API key, you’ll have access to weather updates.
+Just type in a city and click Get Weather.
+
+## Troubleshooting
+
+- **401 Invalid API key** → Your key may not be activated yet (can take 2–3 hours).
+- **City not found** → Make sure you type a valid city name (e.g., "Toronto").
+- **Network error** → Your internet connection or the API service may be temporarily unavailable.
+
 
 ---
 > ## Font Credits
